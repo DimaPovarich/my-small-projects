@@ -1,7 +1,7 @@
 import telebot
 
 
-bot = telebot.TeleBot('6573338053:AAF8OdX5vJx6leyQmNHlIjho_1I-kCDpIzE')
+bot = telebot.TeleBot('YOUR TOKEN')
 anti_spam_list = []
 
 
@@ -46,9 +46,12 @@ def kick_user(message):
 # история чата
 @bot.message_handler(content_types=['text'])
 def save_chat_history(message):
-    mes = f"пользователь {message.from_user.username} пишет: {message.text} в чат: {message.chat.title}\n"
-    with open('chat_history.txt', 'w') as file:
-        file.write(mes)
+    chat_name = message.chat.title
+    filePath = 'chat_history.txt'
+    file = open(filePath, 'a')
+    message_user = f"пользователь {message.from_user.username} пишет: {message.text} в чат: {message.chat.title} "
+    file.write(message_user)
+    file.write('\n')
 
 
 
