@@ -1,7 +1,7 @@
 import telebot
-import time
 
-bot = telebot.TeleBot('YOR TOKEN')
+
+bot = telebot.TeleBot('6573338053:AAF8OdX5vJx6leyQmNHlIjho_1I-kCDpIzE')
 anti_spam_list = []
 
 
@@ -9,55 +9,25 @@ anti_spam_list = []
 def start(message):
     bot.reply_to(message, "Привет! Я бот для управления чатом. Напиши /help, чтобы узнать, что я умею.")
 
+
 @bot.message_handler(commands=['help'])
 def help(message):
     bot.reply_to(message, "/kick - кикнуть пользователя\n/mute - замутить пользователя на определенное время\n/unmute - размутить пользователя\n/info_user - информация о пользователе(использовать только в ответ на его сообщение\n")
 
-# функция мута юзера
-@bot.message_handler(commands=['mute'])
-def mute_user(message):
-    if message.reply_to_message:
-        chat_id = message.chat.id
-        user_id = message.reply_to_message.from_user.id
-        user_status = bot.get_chat_member(chat_id, user_id).status
-        if user_status == 'administrator' or user_status == 'creator':
-            bot.reply_to(message, "Невозможно замутить администратора.")
-        else:
-            duration = 60  # Значение по умолчанию - 1 минута
-            args = message.text.split()[1:]
-            if args:
-                try:
-                    duration = int(args[0])
-                except ValueError:
-                    bot.reply_to(message, "Неправильный формат времени.")
-                    return
-                if duration < 1:
-                    bot.reply_to(message, "Время должно быть положительным числом.")
-                    return
-                if duration > 1440:
-                    bot.reply_to(message, "Максимальное время - 1 день.")
-                    return
-            bot.restrict_chat_member(chat_id, user_id, until_date=time.time() + duration * 60)
-            bot.reply_to(message,
-                         f"Пользователь {message.reply_to_message.from_user.username} замучен на {duration} минут.")
-    else:
-        bot.reply_to(message,
-                     "Эта команда должна быть использована в ответ на сообщение пользователя, которого вы хотите замутить.")
 
-# функция размута юзера
-@bot.message_handler(commands=['unmute'])
-def unmute_user(message):
+#получаем ай ди пользователя и чата
+@bot.message_handler(commands=['info_user'])
+def user_info(message):
     if message.reply_to_message:
+        user_id_get = message.reply_to_message.from_user.id
         chat_id = message.chat.id
-        user_id = message.reply_to_message.from_user.id
-        bot.restrict_chat_member(chat_id, user_id, can_send_messages=True, can_send_media_messages=True,
-                                 can_send_other_messages=True, can_add_web_page_previews=True)
-        bot.reply_to(message, f"Пользователь {message.reply_to_message.from_user.username} размучен.")
+        chat_name = message.chat.title
+        bot.send_message(chat_id, f'Id чата {chat_name}: {chat_id}\nId пользователя {message.reply_to_message.from_user.username}: {user_id_get}\nИмя пользователя: {message.from_user.first_name}\nФамилия пользователя: {message.from_user.last_name}\n')
     else:
-        bot.reply_to(message,
-                     "Эта команда должна быть использована в ответ на сообщение пользователя, которого вы хотите размутить.")
+        bot.send_message(message.chat.id, 'я не могу выдать данные, используйте команду в ответ на сообщение')
 
-# удаление из чата юзера
+
+# удаление из чата человечека
 @bot.message_handler(commands=['kick'])
 def kick_user(message):
     if message.reply_to_message:
@@ -70,31 +40,21 @@ def kick_user(message):
             bot.kick_chat_member(chat_id, user_id)
             bot.reply_to(message, f"Пользователь {message.reply_to_message.from_user.username} был кикнут.")
     else:
-        bot.reply_to(message,
-                     "Эта команда должна быть использована в ответ на сообщение пользователя, которого вы хотите кикнуть.")
+        bot.reply_to(message, "Эта команда должна быть использована в ответ на сообщение пользователя, которого вы хотите кикнуть.")
 
-#получаем ай ди пользователя и чата
-@bot.message_handler(commands=['info_user'])
-def user_id(message):
-    if message.reply_to_message:
-        user_id_get = message.reply_to_message.from_user.id
-        chat_id_get = message.chat.id
-        chat_name = message.chat.title
-        bot.send_message(chat_id_get, f'id чата {chat_name}: {chat_id_get}, id пользователя {message.reply_to_message.from_user.username}: {user_id_get}')
-    else:
-        bot.send_message(message.chat.id, 'я не могу выдать данные, используйте команду в ответ на сообщение')
 
 # история чата
 @bot.message_handler(content_types=['text'])
 def save_chat_history(message):
-    chat_name = message.chat.title
-    filePath = 'chat_history.txt'
-    file = open(filePath, 'a')
-    message_user = f"пользователь {message.from_user.username} пишет: {message.text} в чат: {chat_name} "
-    file.write(message_user)
-    file.write('\n')
+    mes = f"пользователь {message.from_user.username} пишет: {message.text} в чат: {message.chat.title}\n"
+    with open('chat_history.txt', 'w') as file:
+        file.write(mes)
 
-    #анти спам (коряво)
+
+
+#анти спам
+@bot.message_handler(content_types=['text'])
+def antiSpam(message):
     chat_id = message.chat.id
     user_id = message.from_user.id
     anti_spam_a = 0
@@ -117,5 +77,6 @@ def save_chat_history(message):
             else:
                 anti_spam_list.clear()
                 break
+
 
 bot.polling(interval=0, none_stop=True)
