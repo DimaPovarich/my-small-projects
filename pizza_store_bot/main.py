@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 from check import check_int
 
-bot = telebot.TeleBot('YOUR API')
+bot = telebot.TeleBot('YOUR TOKEN')
 
 menu = {"Маргаритта": 299, "4 сыра": 299, "Пепперони": 399, "Пица с морепродуктами": 399, "ПИЦЦА С СОСИСКОЙ КАМОЗИНА": 1000, "Пицца от моей 911 жены(9 месяцев)": 1234}
 basket = {}
@@ -29,7 +29,7 @@ def get_change(message):
             bot.reply_to(message, 'Недостаточно средств🫤')
         else:
             #уведомляем пользователя о успешной оплате корзины
-            bot.send_message(message.chat.id, f'Корзина успешно оплачена на сумму {sum_basket} рублей, ваша сдача: {int(message.text) - sum_basket}руб. Спасибо за покупку😊')
+            bot.send_message(message.chat.id, f'Корзина успешно оплачена на сумму {sum_basket} рублей, ваша сдача: {int(message.text) - sum_basket}руб. Спасибо за покупку😊\nНажмите /help чтобы сделать еще что-то')
             #записываем все товары из корзины в файл с историей заказов
             with open('order_history.txt', 'a') as file:
                 for i in basket:
@@ -44,34 +44,38 @@ def get_change(message):
 
 @bot.message_handler(commands=['pay'])
 def pay(message):
-    #считаем сумму баксов которые нам должны
-    global sum_basket
-    sum_basket = [basket[i] for i in basket]
-    sum_basket = int(sum(sum_basket))
-    #фри хангред бакс
-    bot.send_message(message.chat.id, f'🫰К оплате - {sum_basket} рублей🫰')
+    if basket != {}:
+        #считаем сумму баксов которые нам должны
+        global sum_basket
+        sum_basket = [basket[i] for i in basket]
+        sum_basket = int(sum(sum_basket))
+        #фри хангред бакс
+        bot.send_message(message.chat.id, f'🫰К оплате - {sum_basket} рублей🫰')
 
-    #создаем итерактивное меню выбора
-    markup1 = types.InlineKeyboardMarkup()
+        #создаем итерактивное меню выбора
+        markup1 = types.InlineKeyboardMarkup()
 
-    but1 = types.InlineKeyboardButton(text='Картой💳', callback_data='optioncard')
-    but2 = types.InlineKeyboardButton(text='Наличными💵', callback_data='optioncash')
+        but1 = types.InlineKeyboardButton(text='Картой💳', callback_data='optioncard')
+        but2 = types.InlineKeyboardButton(text='Наличными💵', callback_data='optioncash')
 
-    markup1.add(but1, but2)
+        markup1.add(but1, but2)
 
-    #отправляем вопрос и прикрепляем его к меню
-    bot.send_message(message.chat.id, 'Оплата картой или наличными?🏦', reply_markup=markup1)
+        #отправляем вопрос и прикрепляем его к меню
+        bot.send_message(message.chat.id, 'Оплата картой или наличными?🏦', reply_markup=markup1)
+    else:
+        bot.send_message(message.chat.id, 'Ваша корзина пуста😓')
 #обработка выбора пользователя
 @bot.callback_query_handler(func=lambda call: call.data.startswith('option'))
 def check_callback(call):
     #делаем переменную для обозначения номера заказа
     global number_of_order
+    global sum_basket
     if call.data == 'optioncard':
-        bot.send_message(call.message.chat.id, f'Корзина успешно оплачена на сумму {sum_basket}, спасибо за покупку!😊')
+        bot.send_message(call.message.chat.id, f'Корзина успешно оплачена на сумму {sum_basket}, спасибо за покупку!😊\nНажмите /help чтобы сделать еще что-то')
         #записываем заказ в файл с историей заказов
         with open('order_history.txt', 'a') as file:
             for i in basket:
-                file.write(f'оплачен заказ №{number_of_order}, заказан товар: {i} на сумму {basket[i]}🪙\n')
+                file.write(f'оплачен заказ №{number_of_order}, заказан товар: {i} на сумму {basket[i]}\n')
                 number_of_order += 1
     else:
         #задаем вопрос и вызываем функцию для оплаты наличными
