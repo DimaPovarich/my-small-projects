@@ -145,7 +145,11 @@ def handle_callback(call):
 @bot.message_handler(commands=['history'])
 def send_order_history(message):
     #отправляем историю оплаченных заказов в виде txt файла
-    bot.send_document(message.chat.id, open(r"order_history.txt", 'rb'))
+    with open(r"order_history.txt", 'r') as file:
+        if file.read() != '':
+            bot.send_document(message.chat.id, open(r"order_history.txt", 'rb'))
+        else:
+            bot.send_message(message.chat.id, 'Вы ничего не заказывали!')
 
 
 #ведем запись сообщений которые оказались нераспознанны
